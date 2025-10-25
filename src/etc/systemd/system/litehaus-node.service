@@ -1,0 +1,19 @@
+/etc/systemd/system/litehaus-node.service
+
+[Unit]
+Description=Litehaus Global Node
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/litehaus
+ExecStart=/usr/bin/node /opt/litehaus/litehaus-node.js
+Restart=always
+RestartSec=1
+User=wofl
+EnvironmentFile=/opt/litehaus/.env
+StandardOutput=journal
+StandardError=journal
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

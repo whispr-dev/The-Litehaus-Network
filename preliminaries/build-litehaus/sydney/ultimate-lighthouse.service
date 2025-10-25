@@ -1,0 +1,19 @@
+[Unit]
+Description=Litehaus Sydney Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/litehaus
+ExecStart=/usr/bin/pm2 start /opt/litehaus/ecosystem.config.js --env production
+ExecReload=/usr/bin/pm2 reload /opt/litehaus/ecosystem.config.js --env production
+ExecStop=/usr/bin/pm2 stop /opt/litehaus/ecosystem.config.js
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=litehaus-sydney
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+
+[Install]
+WantedBy=multi-user.target
