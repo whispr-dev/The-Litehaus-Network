@@ -1,0 +1,17 @@
+[Unit]
+Description=Ultimate Litehaus Beacon
+After=network.target
+
+[Service]
+EnvironmentFile=/opt/litehaus/.env
+WorkingDirectory=/opt/litehaus
+ExecStart=/usr/bin/node /opt/litehaus/server.js
+Restart=always
+RestartSec=1
+User=wofl
+Group=wofl
+StandardOutput=append:/var/log/litehaus/beacon.log
+StandardError=append:/var/log/litehaus/beacon.log
+
+[Install]
+WantedBy=multi-user.target

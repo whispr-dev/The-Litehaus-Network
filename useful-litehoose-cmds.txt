@@ -1,0 +1,190 @@
+HAVE TO DO TO INSTALL LITEHAUS:::
+
+1. FIREWALL OPEN
+
+```sudo ufw allow 4567/tcp comment 'Litehaus Listener HTTP'
+sudo ufw reload```
+
+
+2. INSTALL NODE 18.x
+
+```sudo apt purge -y nodejs libnode72 libnode-dev
+sudo rm -rf /var/cache/apt/archives/nodejs_* /var/lib/apt/lists/*
+sudo apt update
+url -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+ sudo apt install -y nodejs
+sudo apt autoremove -y
+node -v
+which node```
+
+[then restart and test]
+
+
+
+for line endings:
+
+```sed -i 's/\r$//' build-litehaus-packs.sh
+chmod +x build-litehaus-packs.sh
+./build-litehaus-packs.sh```
+
+
+
+for no .zip installer:
+
+```sudo apt update && sudo apt install -y zip unzip```
+
+
+
+to create files pre-edit:
+
+```touch filename.txt``` or
+```touch one.txt two.txt three.txt``` for multiples; but ofc,
+```nano filename.txt``` will auto generate the file if it don't exist.
+
+
+```> filename.txt``` also creates filename or truncates it to 0 bytes if it already exists.
+
+
+
+also:
+
+```echo -n > filename.txt        # creates a truly empty file```
+```echo "Hello fren" > note.txt  # creates and writes text```
+
+
+neat trick:
+
+```truncate -s 0 filename.txt     # empty```
+```truncate -s 1M dummy.bin       # 1-megabyte blank binary file```
+
+
+
+LOCALLY::
+
+for litehaus installed as a system service, to check is running:
+
+```sudo systemctl status ultimate-lighthouse.service```
+
+should show, like
+
+```Active: active (running) since ...
+Main PID: ...
+ExecStart=/usr/bin/node /opt/litehaus/server.js```
+
+
+
+otherwise start manually:
+
+```sudo systemctl start ultimate-lighthouse.service```
+
+
+
+and then watch live logs:
+
+```sudo journalctl -u ultimate-lighthouse.service -f````
+
+shows:
+
+```[INFO] Lighthouse beacon broadcasting on port 6789
+[INFO] Sent JSON packet to listener```
+
+
+
+
+```sudo lsof -i :6789```
+
+or
+
+```sudo netstat -tulpen | grep 6789```
+
+
+
+REMOTELY::
+
+```sudo nc -u -l -p 6789```
+
+outputs
+
+```{"beacon":"Litehaus-London","timestamp":"2025-10-25T14:31:01Z","load":0.42}```
+
+
+
+for TCP:
+
+```sudo nc -l 6789```
+
+
+if remote and wanna test form another server:
+
+```nc -u <server-ip> 6789```
+
+or curl it:
+
+```curl http://<server-ip>:6789```
+
+or if (HTTPS)
+
+```curl -k https://<domain>:6789```
+
+
+
+when using PM2 to manage it:
+
+```cd /opt/litehaus
+pm2 logs ultimate-lighthouse```
+
+or
+
+```pm2 monit```
+
+
+
+further useful commands:
+
+```sudo systemctl daemon-reload```
+```sudo systemctl enable ultimate-lighthouse.service```
+```sudo systemctl start ultimate-lighthouse.service```
+
+then
+
+```sudo systemctl status ultimate-lighthouse.service```
+
+to get
+
+```ultimate-lighthouse.service - Ultimate Lighthouse Beacon
+   Loaded: loaded (/etc/systemd/system/ultimate-lighthouse.service; enabled)
+   Active: active (running) since Sat 2025-10-25 20:12:03 UTC; 5s ago
+   Main PID: 1234 (node)
+   ...``
+
+
+
+always useful sanity check:
+
+```ls -l /etc/systemd/system/ultimate-lighthouse.service```
+
+
+to ensure file exists, if does but still trouble, may have stray `/r` form win newline in which case: 
+
+```sudo sed -i 's/\r$//' /etc/systemd/system/ultimate-lighthouse.service
+sudo systemctl daemon-reload
+sudo systemctl start ultimate-lighthouse.service```
+
+
+then do
+
+```sudo lsof -i :6789
+sudo journalctl -u ultimate-lighthouse.service -f | grep json```
+
+
+
+and quick verify file is running:
+
+```sudo systemctl status ultimate-lighthouse.service```
+
+should show:
+
+```Active: active (running)```
+
+
+

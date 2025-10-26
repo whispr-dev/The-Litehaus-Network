@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🚨 Litehaus WebSocket Test</title>
+    <style>
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+        }
+        .terminal {
+            background: #111;
+            border: 2px solid #333;
+            padding: 20px;
+            height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .status {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-left: 4px solid #0ff;
+            background: rgba(0, 255, 255, 0.1);
+        }
+        button {
+            background: #333;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 5px 10px;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚨 LITEHAUS WEBSOCKET TEST 🚨</h1>
+    
+    <div class="status">
+        <strong>Status:</strong> <span id="status">Disconnected</span><br>
+        <strong>Messages:</strong> <span id="msgCount">0</span><br>
+        <strong>Port:</strong> <span id="port">8083</span>
+    </div>
+    
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+    <button onclick="sendTestData()">Send Test Data to FIFO</button>
+    
+    <div class="terminal" id="terminal"></div>
+    
+    <script>
+        let ws = null;
+        let messageCount = 0;
+        const terminal = document.getElementById('terminal');
+        const status = document.getElementById('status');
+        const msgCount = document.getElementById('msgCount');
+        
+        function log(msg) {
+            const timestamp = new Date().toLocaleTimeString();
+            terminal.textContent += `[${timestamp}] ${msg}\n`;
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+        
+        function connect() {
+            if (ws) {
+                ws.close();
+            }
+            
+            const port = document.getElementById('port').textContent;
+            const wsUrl = `ws://localhost:${port}`;
+            
+            log(`🔌 Connecting to ${wsUrl}...`);
+            status.textContent = 'Connecting...';
+            status.style.color = '#ff0';
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = function() {
+                log('✅ Connected successfully!');
+                status.textContent = 'Connected';
+                status.style.color = '#0f0';
+            };
+            
+            ws.onmessage = function(event) {
+                messageCount++;
+                msgCount.textContent = messageCount;
+                log(`📨 ${event.data}`);
+            };
+            
+            ws.onclose = function() {
+                log('🔌 Connection closed');
+                status.textContent = 'Disconnected';
+                status.style.color = '#f00';
+            };
+            
+            ws.onerror = function(error) {
+                log(`🚨 WebSocket error: ${error}`);
+                status.textContent = 'Error';
+                status.style.color = '#f00';
+            };
+        }
+        
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+        
+        function sendTestData() {
+            log('📤 Sending test data to FIFO pipe...');
+            log('Run this in terminal: echo "Test message from browser" > /tmp/litehaus_pipe');
+        }
+        
+        // Auto-connect on load
+        log('🏰 Litehaus WebSocket Test initialized');
+        log('Click Connect to test WebSocket connection');
+    </script>
+</body>
+</html>

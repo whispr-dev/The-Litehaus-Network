@@ -1,0 +1,15 @@
+{
+  "name": "litehaus-node",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Litehaus regional beacon + listener",
+  "main": "server.js",
+  "scripts": {
+    "start:beacon": "node /opt/litehaus/server.js",
+    "start:listener": "node /opt/litehaus/litehaus-listener/server.js"
+  },
+  "dependencies": {
+    "node-fetch": "2.6.7"
+  }
+}
+

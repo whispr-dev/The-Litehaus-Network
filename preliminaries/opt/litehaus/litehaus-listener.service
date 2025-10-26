@@ -1,0 +1,17 @@
+[Unit]
+Description=Global Litehaus Listener
+After=network.target
+
+[Service]
+EnvironmentFile=/opt/litehaus/.env
+WorkingDirectory=/opt/litehaus/litehaus-listener
+ExecStart=/usr/bin/node /opt/litehaus/litehaus-listener/server.js
+Restart=always
+RestartSec=1
+User=wofl
+Group=wofl
+StandardOutput=append:/var/log/litehaus/listener.log
+StandardError=append:/var/log/litehaus/listener.log
+
+[Install]
+WantedBy=multi-user.target

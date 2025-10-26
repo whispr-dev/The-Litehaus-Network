@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 Litehaus Network Monitor Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e0e0;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .header {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 30px;
+            border-bottom: 3px solid #00ffff;
+            box-shadow: 0 4px 20px rgba(0, 255, 255, 0.3);
+            position: relative;
+            z-index: 100;
+        }
+        
+        .header h1 {
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+            font-size: 2.2em;
+            text-align: center;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff; }
+            to { text-shadow: 0 0 20px #00ffff, 0 0 30px #00ffff, 0 0 40px #00ffff; }
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 30px;
+            background: rgba(0, 0, 0, 0.6);
+            border-bottom: 1px solid #333;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status-dot.connected {
+            background: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+        }
+        
+        .status-dot.disconnected {
+            background: #ff0000;
+            box-shadow: 0 0 10px #ff0000;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .main-container {
+            display: flex;
+            height: calc(100vh - 140px);
+        }
+        
+        .terminal-container {
+            flex: 1;
+            background: #000;
+            margin: 20px;
+            border-radius: 10px;
+            border: 2px solid #333;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .terminal-header {
+            background: #2d2d2d;
+            padding: 10px 20px;
+            border-bottom: 1px solid #444;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .terminal-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .terminal-button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .terminal-button.close { background: #ff5f56; }
+        .terminal-button.minimize { background: #ffbd2e; }
+        .terminal-button.maximize { background: #27ca3f; }
+        
+        .terminal-title {
+            color: #ccc;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        
+        .terminal-output {
+            height: calc(100% - 50px);
+            padding: 20px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background: linear-gradient(180deg, #000 0%, #0a0a0a 100%);
+        }
+        
+        .terminal-output::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .terminal-output::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        
+        .terminal-output::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+        
+        .terminal-output::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        .stats-panel {
+            width: 350px;
+            background: rgba(0, 0, 0, 0.8);
+            margin: 20px 20px 20px 0;
+            border-radius: 10px;
+            border: 2px solid #333;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .stats-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 4px solid #00ffff;
+        }
+        
+        .stats-section h3 {
+            color: #00ffff;
+            margin-bottom: 10px;
+            font-size: 16px;
+            text-shadow: 0 0 5px #00ffff;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stat-label {
+            color: #aaa;
+            font-size: 12px;
+        }
+        
+        .stat-value {
+            color: #fff;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .reconnect-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+        
+        .reconnect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+        
+        .clear-btn {
+            background: linear-gradient(45deg, #74b9ff, #0984e3);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            margin-left: 10px;
+            transition: all 0.3s;
+        }
+        
+        .clear-btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        /* ANSI Color Classes */
+        .ansi-black { color: #000000; }
+        .ansi-red { color: #cd0000; }
+        .ansi-green { color: #00cd00; }
+        .ansi-yellow { color: #cdcd00; }
+        .ansi-blue { color: #0000ee; }
+        .ansi-magenta { color: #cd00cd; }
+        .ansi-cyan { color: #00cdcd; }
+        .ansi-white { color: #e5e5e5; }
+        .ansi-bright-black { color: #7f7f7f; }
+        .ansi-bright-red { color: #ff0000; }
+        .ansi-bright-green { color: #00ff00; }
+        .ansi-bright-yellow { color: #ffff00; }
+        .ansi-bright-blue { color: #5c5cff; }
+        .ansi-bright-magenta { color: #ff00ff; }
+        .ansi-bright-cyan { color: #00ffff; }
+        .ansi-bright-white { color: #ffffff; }
+        .ansi-bold { font-weight: bold; }
+        .ansi-dim { opacity: 0.6; }
+        .ansi-underline { text-decoration: underline; }
+        .ansi-blink { animation: blink 1s linear infinite; }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .lighthouse-animation {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            animation: lighthouse-spin 3s linear infinite;
+        }
+        
+        @keyframes lighthouse-spin {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(90deg) scale(1.1); }
+            50% { transform: rotate(180deg) scale(1); }
+            75% { transform: rotate(270deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        
+        .message-count {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 255, 255, 0.2);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            color: #00ffff;
+            border: 1px solid #00ffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚨 LITEHAUS NETWORK MONITOR 🚨</h1>
+        <div class="lighthouse-animation">🏰</div>
+    </div>
+    
+    <div class="status-bar">
+        <div class="status-indicator">
+            <div class="status-dot" id="connectionStatus"></div>
+            <span id="connectionText">Connecting...</span>
+            <button class="reconnect-btn" onclick="reconnectWebSocket()">Reconnect</button>
+            <button class="clear-btn" onclick="clearTerminal()">Clear</button>
+        </div>
+        <div class="message-count" id="messageCount">Messages: 0</div>
+    </div>
+    
+    <div class="main-container">
+        <div class="terminal-container">
+            <div class="terminal-header">
+                <div class="terminal-buttons">
+                    <div class="terminal-button close"></div>
+                    <div class="terminal-button minimize"></div>
+                    <div class="terminal-button maximize"></div>
+                </div>
+                <div class="terminal-title">Litehaus Live Feed</div>
+            </div>
+            <div class="terminal-output" id="terminalOutput"></div>
+        </div>
+        
+        <div class="stats-panel">
+            <div class="stats-section">
+                <h3>🔌 Connection Stats</h3>
+                <div class="stat-item">
+                    <span class="stat-label">Status:</span>
+                    <span class="stat-value" id="wsStatus">Disconnected</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Messages:</span>
+                    <span class="stat-value" id="msgCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Uptime:</span>
+                    <span class="stat-value" id="uptime">00:00:00</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Last Message:</span>
+                    <span class="stat-value" id="lastMsg">Never</span>
+                </div>
+            </div>
+            
+            <div class="stats-section">
+                <h3>📊 Performance</h3>
+                <div class="stat-item">
+                    <span class="stat-label">Msg/Min:</span>
+                    <span class="stat-value" id="msgRate">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Avg Size:</span>
+                    <span class="stat-value" id="avgSize">0 B</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Total Data:</span>
+                    <span class="stat-value" id="totalData">0 B</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Reconnects:</span>
+                    <span class="stat-value" id="reconnects">0</span>
+                </div>
+            </div>
+            
+            <div class="stats-section">
+                <h3>🚨 Live Status</h3>
+                <div class="stat-item">
+                    <span class="stat-label">Beacons Seen:</span>
+                    <span class="stat-value" id="beaconCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Parse Errors:</span>
+                    <span class="stat-value" id="parseErrors">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Buffer Size:</span>
+                    <span class="stat-value" id="bufferSize">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // WebSocket connection management
+        let ws = null;
+        let isConnected = false;
+        let messageCount = 0;
+        let totalBytes = 0;
+        let reconnectCount = 0;
+        let startTime = Date.now();
+        let lastMessageTime = null;
+        let beaconCount = 0;
+        let parseErrors = 0;
+        let messageBuffer = [];
+        
+        const maxBufferLines = 1000;
+        const wsUrl = `ws://${window.location.hostname}:8083`;
+        
+        // DOM elements
+        const terminalOutput = document.getElementById('terminalOutput');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const connectionText = document.getElementById('connectionText');
+        
+        // ANSI escape sequence parser
+        function parseAnsiEscapes(text) {
+            // Basic ANSI color code mapping
+            const ansiMap = {
+                '\u001b[0m': '</span>',  // Reset
+                '\u001b[1m': '<span class="ansi-bold">',  // Bold
+                '\u001b[2m': '<span class="ansi-dim">',   // Dim
+                '\u001b[4m': '<span class="ansi-underline">', // Underline
+                '\u001b[5m': '<span class="ansi-blink">',     // Blink
+                '\u001b[30m': '<span class="ansi-black">',
+                '\u001b[31m': '<span class="ansi-red">',
+                '\u001b[32m': '<span class="ansi-green">',
+                '\u001b[33m': '<span class="ansi-yellow">',
+                '\u001b[34m': '<span class="ansi-blue">',
+                '\u001b[35m': '<span class="ansi-magenta">',
+                '\u001b[36m': '<span class="ansi-cyan">',
+                '\u001b[37m': '<span class="ansi-white">',
+                '\u001b[90m': '<span class="ansi-bright-black">',
+                '\u001b[91m': '<span class="ansi-bright-red">',
+                '\u001b[92m': '<span class="ansi-bright-green">',
+                '\u001b[93m': '<span class="ansi-bright-yellow">',
+                '\u001b[94m': '<span class="ansi-bright-blue">',
+                '\u001b[95m': '<span class="ansi-bright-magenta">',
+                '\u001b[96m': '<span class="ansi-bright-cyan">',
+                '\u001b[97m': '<span class="ansi-bright-white">'
+            };
+            
+            let result = text;
+            
+            // Handle clear screen sequences
+            result = result.replace(/\u001b\[2J\u001b\[H/g, '');
+            result = result.replace(/\u001b\[H/g, '');
+            result = result.replace(/\u001b\[J/g, '');
+            
+            // Replace ANSI codes with HTML spans
+            for (const [ansiCode, htmlTag] of Object.entries(ansiMap)) {
+                result = result.replace(new RegExp(ansiCode.replace(/\[/g, '\\['), 'g'), htmlTag);
+            }
+            
+            // Handle cursor movement (simplified)
+            result = result.replace(/\u001b\[[0-9]+;[0-9]+H/g, '');
+            result = result.replace(/\u001b\[[0-9]+H/g, '');
+            result = result.replace(/\u001b\[K/g, '');
+            
+            // HTML escape but preserve our spans
+            result = result.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            result = result.replace(/&lt;span class="([^"]+)"&gt;/g, '<span class="$1">');
+            result = result.replace(/&lt;\/span&gt;/g, '</span>');
+            
+            return result;
+        }
+        
+        function appendToTerminal(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const processedMessage = parseAnsiEscapes(message);
+            
+            // Add to buffer
+            messageBuffer.push(`[${timestamp}] ${processedMessage}`);
+            
+            // Trim buffer if too large
+            if (messageBuffer.length > maxBufferLines) {
+                messageBuffer = messageBuffer.slice(-maxBufferLines);
+            }
+            
+            // Update terminal display
+            terminalOutput.innerHTML = messageBuffer.join('\n');
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+            
+            // Update stats
+            messageCount++;
+            totalBytes += message.length;
+            lastMessageTime = Date.now();
+            
+            // Check for specific content types
+            if (message.includes('Beacon') || message.includes('🚨') || message.includes('🚀')) {
+                beaconCount++;
+            }
+            
+            updateStats();
+        }
+        
+        function updateStats() {
+            document.getElementById('msgCount').textContent = messageCount;
+            document.getElementById('messageCount').textContent = `Messages: ${messageCount}`;
+            document.getElementById('beaconCount').textContent = beaconCount;
+            document.getElementById('parseErrors').textContent = parseErrors;
+            document.getElementById('bufferSize').textContent = messageBuffer.length;
+            document.getElementById('reconnects').textContent = reconnectCount;
+            
+            if (messageCount > 0) {
+                document.getElementById('avgSize').textContent = Math.round(totalBytes / messageCount) + ' B';
+                document.getElementById('totalData').textContent = formatBytes(totalBytes);
+                
+                const elapsed = (Date.now() - startTime) / 60000; // minutes
+                document.getElementById('msgRate').textContent = Math.round(messageCount / elapsed);
+            }
+            
+            if (lastMessageTime) {
+                document.getElementById('lastMsg').textContent = new Date(lastMessageTime).toLocaleTimeString();
+            }
+            
+            // Update uptime
+            const uptime = Math.floor((Date.now() - startTime) / 1000);
+            const hours = Math.floor(uptime / 3600);
+            const minutes = Math.floor((uptime % 3600) / 60);
+            const seconds = uptime % 60;
+            document.getElementById('uptime').textContent = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+        
+        function updateConnectionStatus(connected) {
+            isConnected = connected;
+            connectionStatus.className = `status-dot ${connected ? 'connected' : 'disconnected'}`;
+            connectionText.textContent = connected ? 'Connected to Litehaus' : 'Disconnected';
+            document.getElementById('wsStatus').textContent = connected ? 'Connected' : 'Disconnected';
+        }
+        
+        function connectWebSocket() {
+            try {
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = function(event) {
+                    console.log('Connected to Litehaus WebSocket');
+                    updateConnectionStatus(true);
+                    appendToTerminal('🔌 Connected to Litehaus rebroadcaster');
+                };
+                
+                ws.onmessage = function(event) {
+                    appendToTerminal(event.data);
+                };
+                
+                ws.onclose = function(event) {
+                    console.log('WebSocket connection closed');
+                    updateConnectionStatus(false);
+                    appendToTerminal('🔌 Connection lost - attempting reconnect...');
+                    
+                    // Auto-reconnect after 3 seconds
+                    setTimeout(() => {
+                        if (!isConnected) {
+                            reconnectWebSocket();
+                        }
+                    }, 3000);
+                };
+                
+                ws.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                    parseErrors++;
+                    updateConnectionStatus(false);
+                    appendToTerminal('🚨 WebSocket error occurred');
+                };
+                
+            } catch (error) {
+                console.error('Failed to create WebSocket:', error);
+                updateConnectionStatus(false);
+                appendToTerminal('🚨 Failed to connect to rebroadcaster');
+            }
+        }
+        
+        function reconnectWebSocket() {
+            if (ws) {
+                ws.close();
+            }
+            reconnectCount++;
+            updateStats();
+            appendToTerminal('🔄 Attempting to reconnect...');
+            connectWebSocket();
+        }
+        
+        function clearTerminal() {
+            messageBuffer = [];
+            terminalOutput.innerHTML = '';
+            appendToTerminal('🧹 Terminal cleared');
+        }
+        
+        // Initialize connection and stats updates
+        connectWebSocket();
+        setInterval(updateStats, 1000);
+        
+        // Add some initial messages
+        setTimeout(() => {
+            appendToTerminal('🏰 Litehaus Dashboard Initialized');
+            appendToTerminal('⚡ Waiting for beacon transmissions...');
+        }, 500);
+    </script>
+</body>
+</html>
